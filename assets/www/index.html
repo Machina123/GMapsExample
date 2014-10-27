@@ -17,7 +17,7 @@
             
             <input id="Rlon" type="range" min="-180" max="180" value="0" />
             <input id="Rlat" type="range" min="-90" max="90" value="0" />
-            <input id="Rzoom" type="range" min="1" max="15" value="3" />
+            <input id="Rzoom" type="range" min="1" max="15" value="3" /> <br />
             <ul id="markerlist" data-role="listview"></ul>
 
         </div>
@@ -29,11 +29,17 @@
 
             <script>
                 var listIndex = 0;
-                //var db = localStorage;
-                //var markers = [];
+                var db = localStorage;
+                var markers = [];
+
                 $(document).ready(function () {
-                    //markers = JSON.parse(db.getItem("markers"));
-                    //listIndex = parseInt(db.getItem("listIndex"));
+
+                    if (markers.length < 1) {
+                        if (!db.getItem("markers") == null) {
+                            markers = JSON.parse(db.getItem("markers"));
+                            listIndex = markers.length;
+                        }
+                    }
 
                     $("#gmap").width("100%").height(window.innerHeight - 75 + "px");
                     $("#gmap").gmap3({
@@ -41,15 +47,14 @@
                             options: {
                                 latLng: [0.000, 0.000],
                                 zoom: 3,
-                                disableDefaultUI: true
+                                disableDefaultUI: true,
+                                disableDoubleClickZoom: true
                             },
                             events: {
                                 click: function (map,event) {
-                                    console.log(event);
-                                    addMapMarker(event.latLng.lat(), event.latLng.lng());
-                                    $("#markerlist").append("<li>Miejsce</li>");
-                                    $("#markerlist").listview("refresh");
-                                    listIndex++;
+                                    //console.log(event);
+                                    var map = $("#gmap").gmap3({ get: "map" });
+                                    addMapMarker(event.latLng, map.getZoom());
                                 }
                             }
                         }
@@ -84,20 +89,24 @@
                     $("#optionsPanel").panel("open");
                 });
 
-                function addMapMarker(lat, lng) {
-                    $("#gmap").gmap3({
-                        map: {
-                            marker: {
-                                options: {
-                                    draggable: true
-                                },
-                                latLng: [lat, lng],
-                            },
+                function addMapMarker(latLng, zoom) {
+                    var map = $("#gmap").gmap3({get: "map"});
+                    var marker = new google.maps.Marker({
+                        position: latLng,
+                        map: map,
+                        options: {
+                            zoom: zoom
                         }
-                    });
-                    console.log(lat + " " + lng);
+                    })
+                    console.log(latLng.lat() + " " + latLng.lng() + " " + zoom);
+                    markers.push({ latLng: latLng, zoom: zoom });
+                    db.setItem("markers", JSON.stringify(markers));
+                    $("#markerlist").append("<li><a>Miejsce " + listIndex + "</a><a class=\"delete-marker\" data-icon=\"delete\"></a></li>");
+                    $("#markerlist").listview("refresh");
+                    listIndex++;
                 }
-                });
+
+            });
 
             </script>
         </div>
