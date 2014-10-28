@@ -18,7 +18,8 @@
             <input id="Rlon" type="range" min="-180" max="180" value="0" />
             <input id="Rlat" type="range" min="-90" max="90" value="0" />
             <input id="Rzoom" type="range" min="1" max="15" value="3" /> <br />
-            <ul id="markerlist" data-role="listview"></ul>
+            <ul id="markerlist" data-role="listview"></ul><br />
+            <a data-role="button" data-icon="check" data-iconpos="left" id="btnSavePlaces">Zapisz miejsca</a>
 
         </div>
         <div data-role="header" style="height: 40px;" data-theme="b">
@@ -34,11 +35,15 @@
 
                 $(document).ready(function () {
 
-                    if (markers.length < 1) {
+                    if (markers.length >= 1) {
                         if (!db.getItem("markers") == null) {
                             markers = JSON.parse(db.getItem("markers"));
                             listIndex = markers.length;
                         }
+                    } else {
+                        var btn = document.getElementById("btnSavePlaces");
+                        btn.className = "ui-disabled";
+                        console.log("Brak elementów w tablicy markers[]");
                     }
 
                     $("#gmap").width("100%").height(window.innerHeight - 75 + "px");
@@ -103,8 +108,18 @@
                     db.setItem("markers", JSON.stringify(markers));
                     $("#markerlist").append("<li><a>Miejsce " + listIndex + "</a><a class=\"delete-marker\" data-icon=\"delete\"></a></li>");
                     $("#markerlist").listview("refresh");
+                    var btn = document.getElementById("btnSavePlaces");
+                    btn.className = "";
                     listIndex++;
                 }
+                
+                $("#markerlist").on("click", "li", function() {
+                    var index = $(this).index();
+                    var map = $("#gmap").gmap3({ get: "map" });
+                    map.setCenter(markers[index].latLng);
+                    map.setZoom(markers[index].zoom);
+                });
+
 
             });
 
