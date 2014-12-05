@@ -455,7 +455,7 @@
                                 }
                                 $("#tripslist").listview("refresh");
                                 $.mobile.hidePageLoadingMsg();
-                                alert("Pobrano " + allTrips.length + " trasy z serwera");
+                                alert("Pobrano " + allTrips.length + " tras(y) z serwera");
                             },
                             error: function (xhr) {
                                 $.mobile.hidePageLoadingMsg();
@@ -482,7 +482,19 @@
                         })
                         $.mobile.hidePageLoadingMsg();
                         $("#infoText").html("Trasa: " + allTrips[index][0] + " - " + allTrips[index][2]);
-                    })
+                    });
+
+                    $("#aboutApp").click(function () {
+                        navigator.notification.alert("Autor: Patryk Ciepiela, kl. 3Ib - Zespół Szkół Łączności w Krakowie. Aplikacja przygotowana w ramach projektu na Aplikacje Klienckie", null, "O aplikacji MachiTrips", "OK");
+                    });
+
+                    $("#optionsPanel").swipeleft(function () {
+                        $("#optionsPanel").panel("close");
+                    });
+
+                    $("#tripsPanel").swipeleft(function () {
+                        $("#tripsPanel").panel("close");
+                    });
                 });
 
             </script>
@@ -490,7 +502,7 @@
         <div data-role="footer" data-position="fixed">
             <!--<a data-role="button" data-icon="back" data-iconpos="right" id="btnCloseApp">Koniec</a>-->
             <h1 id="infoText"> </h1>
-
+            <a data-role="button" data-icon="info" data-iconpos="notext" style="position: absolute; right: 4px" id="aboutApp"></a>
         </div>
     </div>
     <script type="text/javascript" src="cordova.js"></script>

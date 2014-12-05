@@ -2,7 +2,7 @@
 title Budowanie aplikacji...
 call ant debug
 
-timeout /t 1 /nobreak
+timeout /t 5
 
 title Instalowanie aplikacji...
 call adb install -r bin\gmaps001-debug.apk
