@@ -1,0 +1,39 @@
+﻿@-webkit-keyframes scroll {
+    0% {
+        right: -200%;
+    }
+
+    100% {
+        right: 100%;
+    }
+}
+
+@keyframes scroll {
+    0% {
+        right: -200%;
+    }
+
+    100% {
+        right: 100%;
+    }
+}
+
+.nomargin {
+    margin: 0;
+    padding: 0;
+    overflow: hidden !important;
+}
+
+body, #gmap {
+    overflow: hidden;
+}
+
+
+.animated {
+    width: 700px;
+    position: absolute;
+    bottom: 12px;
+    right: 0;
+    -webkit-animation: scroll linear 9s infinite;
+    animation: scroll linear 9s infinite;
+}

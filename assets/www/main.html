@@ -1,0 +1,439 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+    <link rel="stylesheet" href="lib/jquery.mobile-1.3.2.min.css" />
+    <link rel="stylesheet" href="style.css" type="text/css" />
+    <script src="lib/jquery-1.11.1.min.js"></script>
+    <script src="lib/jquery.mobile-1.3.2.min.js"></script>
+    <script src="http://maps.google.com/maps/api/js?sensor=false&language=pl"></script>
+    <script src="lib/gmap3.min.js"></script>
+    <title>Hello World</title>
+</head>
+<body>
+    <div data-role="page" id="splash">
+        <div data-role="content" id="splashContent">
+
+        </div>
+    </div>
+
+    <div data-role="page" id="main">
+        <div id="optionsPanel" data-role="panel" data-position="left" data-slide-close="true" data-display="push">
+            <label>Szerokość geograficzna:<input data-mini="true" id="Rlat" type="range" min="-90" max="90" value="0" /></label>
+            <label>Długość geograficzna:<input data-mini="true" id="Rlon" type="range" min="-180" max="180" value="0" /></label>
+            <label>Przybliżenie: <input data-mini="true" id="Rzoom" type="range" min="1" max="15" value="3" /></label> <br />
+            <ul id="markerlist" data-role="listview"></ul><br />
+            <a data-role="button" data-mini="true" data-icon="star" data-iconpos="left" id="btnDrawPath">Narysuj wycieczkę</a>
+            <a data-role="button" data-mini="true" data-icon="delete" data-iconpos="left" id="btnClearMap">Wyczyść mapę</a>
+            <a data-role="button" data-mini="true" data-icon="check" data-iconpos="left" id="btnSaveMarkers">Zapisz punkty</a>
+            <a data-role="button" data-mini="true" data-icon="minus" data-iconpos="left" id="btnClearLocal">Wyczyść zapisane punkty</a>
+            <a data-role="button" data-mini="true" data-icon="edit" data-iconpos="left" id="btnSendToServer">Wyślij trasę na serwer</a>
+            <label><input type="checkbox" data-mini="true" id="chkStreet" />StreetView</label>
+            <!--<a data-role="button" data-icon="check" data-iconpos="left" id="btnSavePlaces">Zapisz miejsca</a>-->
+        </div>
+
+        <div data-role="popup" id="colorPicker" data-overlay-theme="a" data-theme="b" style="width: 270px; height: 270px;" class="ui-corner-all">
+            <div data-role="header" class="ui-corner-top">
+                <h2>Wybierz kolor</h2>
+            </div>
+            <div data-role="content" id="cpContent">
+
+            </div>
+        </div>
+        <div data-role="header" style="height: 40px;" data-theme="b">
+            <img id="menuButton" style="display: inline; position: absolute; top: 4px; left: 4px; width: 32px; height: 32px;" src="img\menu.png" alt="Menu" />
+            <img id="btnCloseApp" src="img/power.png" style="display: inline; position: absolute; top: 4px; right: 4px; width: 32px; height: 32px;" alt="Zamknij program" />
+            <img id="btnColorSel" src="img/paint.png" style="display: inline; position: absolute; top: 4px; right: 40px; width: 32px; height: 32px;" alt="Wybierz kolor" />
+            <img id="btnGetPosition" src="img/position.png" style="display: inline; position: absolute; top: 4px; right: 80px; width: 32px; height: 32px;" alt="Pobierz swoją lokalizację" />
+            <img id="btnGetRemoteTrips" src="img/trips.png" style="display: inline; position: absolute; top: 4px; right: 120px; width: 32px; height: 32px;" alt="Pobierz wycieczki innych" />
+        </div>
+        <div data-role="content" class="nomargin">
+            <div id="gmap"></div>
+            <div id="gmapStreet"></div>
+            <script>
+                var listIndex = 0;
+                var db = localStorage;
+                var markers = [];
+                var markersSendable = [];
+                var lineColor = "#ff0000";
+                var colorsTable = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#00ffff", "#ff00aa", "#6666ff", "#ff66ff", "#006666"]
+                var isPathPresent = false;
+
+                $(document).on("pageinit", "#splash", function () {
+                    var page = document.getElementById("splashContent");
+                    var logo = document.createElement("img");
+                    logo.src = "img/icon.png";
+                    logo.style.position = "fixed";
+                    logo.style.left = ((Math.floor(window.innerWidth) / 2) - 96) + "px";
+                    logo.style.top = ((Math.floor(window.innerHeight) / 2) - 96) + "px";
+                    var text = document.createElement("span");
+                    text.innerHTML = "MachiTrips";
+                    text.style.display = "block";
+                    text.style.width = window.innerWidth;
+                    text.style.textAlign = "center";
+                    text.style.color = "#6699ff";
+                    text.style.fontSize = "30pt";
+                    page.appendChild(text);
+                    page.appendChild(logo);
+                    console.log("Splash screen");
+                    setTimeout(function () {
+                        $.mobile.navigate("#main");
+                    }, 5000);
+                });
+
+                $(document).on("pageinit", "#main", function () {
+                    console.log("Ładowanie mapy");
+                    $.mobile.showPageLoadingMsg();
+                    setTimeout(function () { mapInit() }, 1250);
+                    function mapInit() {
+
+                        $("#gmap").css("position", "absolute").width("100%").height(window.innerHeight - 84 + "px");
+                        $("#gmap").gmap3({
+                            map: {
+                                options: {
+                                    latLng: [0.000, 0.000],
+                                    zoom: 3,
+                                    disableDefaultUI: true,
+                                    disableDoubleClickZoom: true
+                                },
+                                events: {
+                                    click: function (map, event) {
+                                        //console.log(event);
+                                        var map = $("#gmap").gmap3({ get: "map" });
+                                        addMapMarker(event.latLng, map.getZoom());
+                                    }
+                                }
+                            }
+                        });
+
+                        $.mobile.hidePageLoadingMsg();
+                        $("#infoText").html("Witaj w aplikacji MachiTrips!");
+                        getMarkersFromLS();
+                    }
+
+                    function mapReInit() {
+                        var active = $("#chkStreet").prop("checked");
+
+                        if (active) {
+                            $("#gmap").css("position", "absolute").width("100%").height(Math.floor(window.innerHeight / 2) - 42 + "px").css("top", "42px");
+                            $("#gmapStreet").css("position", "absolute").width("100%").height(Math.floor(window.innerHeight / 2) - 42 + "px").css("bottom", "0");
+                        } else {
+                            $("#gmap").css("position", "absolute").width("100%").height(window.innerHeight - 84 + "px");
+                            $("#gmapStreet").height("0");
+                        }
+                    }
+
+                    $("#Rlon").change(function () {
+                        //alert("zmiana")
+                        var latV = parseInt($("#Rlat").val());
+                        var lonV = parseInt($("#Rlon").val());
+                        var map = $("#gmap").gmap3({ get: "map" });
+
+                        map.setCenter(new google.maps.LatLng(latV, lonV));
+                    });
+
+                    $("#Rlat").change(function () {
+                        var latV = parseInt($("#Rlat").val());
+                        var lonV = parseInt($("#Rlon").val());
+                        var map = $("#gmap").gmap3({ get: "map" });
+
+                        map.panTo(new google.maps.LatLng(latV, lonV));
+                    });
+
+                    $("#Rzoom").change(function () {
+                        var zoomV = parseInt($("#Rzoom").val());
+                        var map = $("#gmap").gmap3({ get: "map" });
+
+                        map.setZoom(zoomV);
+
+                    });
+
+                    $("#menuButton").click(function () {
+                        $("#optionsPanel").panel("open");
+                    });
+
+                    $("#markerlist").on("click", "li", function () {
+                        var index = $(this).index();
+                        var map = $("#gmap").gmap3({ get: "map" });
+                        map.panTo(markers[index][0].getPosition());
+                        map.setZoom(markers[index][1]);
+                    });
+
+                    $("#markerlist").on("click", ".delete-marker", function () {
+
+                        var index = $(this).parent().index();
+                        var listelem = $(this).parent();
+
+                        markers[index][0].setMap(null);
+                        markers.splice(index, 1);
+                        markersSendable.splice(index, 1);
+                        relistMarkers();
+
+                    });
+
+
+                    $("#btnDrawPath").click(function () {
+
+                        redrawPolyline(lineColor);
+
+                    });
+
+                    $("#btnClearMap").click(function () {
+                        var map = $("#gmap").gmap3({ get: "map" });
+                        for (i = 0; i < markers.length; i++) {
+                            markers[i][0].setMap(null);
+                        }
+                        $("#gmap").gmap3("clear");
+                        markers.splice(0, markers.length);
+                        markersSendable.splice(0, markersSendable.length);
+                        listIndex = 0;
+                        
+                        $("#markerlist").html("");
+                        $("#markerlist").listview("refresh");
+                        alert("Mapa została wyczyszczona");
+                    });
+
+                    function redrawPolyline(colorS) {
+                        $("#gmap").gmap3("clear");
+                        $("#gmap").gmap3({
+                            marker: {
+                                values: markersSendable
+                            },
+                            polyline: {
+                                map: null
+                            }
+
+                        });
+
+                        $("#gmap").gmap3({
+                            polyline: {
+                                options: {
+                                    path: markersSendable,
+                                    strokeColor: colorS,
+                                    strokeOpacity: 0.8,
+                                    strokeWeight: 2
+                                }
+                            }
+                        });
+                        isPathPresent = true;
+                    }
+
+                    function relistMarkers() {
+
+                        $("#gmap").gmap3("clear");
+                        $("#gmap").gmap3({
+                            marker: {
+                                values: markersSendable
+                            },
+                            polyline: {
+                                map: null
+                            }
+
+                        });
+                        isPathPresent = false;
+                        $("#markerlist").html("");
+                        for (i = 0; i < markers.length; i++) {
+                            $("#markerlist").append("<li><a data-icon=\"forward\" data-iconpos=\"left\">Miejsce " + i + "</a><a class=\"delete-marker\" data-icon=\"delete\"></a></li>");
+                        }
+                        $("#markerlist").listview("refresh");
+                    }
+
+                    $("#btnSendToServer").click(function () {
+
+                        $.mobile.showPageLoadingMsg();
+                        var pointsTab = [];
+                        for (i = 0; i < markersSendable.length; i++) {
+                            pointsTab[i] = [markersSendable[i].latLng.lat(), markersSendable[i].latLng.lng(), markersSendable[i].zoom];
+                        }
+                        var dataString = [prompt("Podaj swoje imię"), lineColor, new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(), JSON.stringify(pointsTab)]
+                        var sendObj = {
+                            /*  color: lineColor,
+                                name: prompt("Podaj swoje imię"),
+                                date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(),
+                                path: JSON.stringify(markersSendable),
+                            */
+                            data: JSON.stringify(dataString),
+                            action: "save"
+                        };
+                        alert(JSON.stringify(dataString));
+                        $.ajax({
+                            type: "POST",
+                            url: "http://localhost:51311/Handler.aspx",
+                            data: sendObj,
+                            dataType: "text",
+                            success: function (response) {
+                                $.mobile.hidePageLoadingMsg();
+                                alert(response);
+                            },
+                            error: function (xhr) {
+                                $.mobile.hidePageLoadingMsg();
+                                alert("Niepowodzenie: " + xhr.responseText);
+                            }
+                        });
+                    });
+
+                    $("#btnSaveMarkers").click(function () {
+                        setMarkersToLS();
+                    });
+
+                    $("#btnLoadMarkers").click(function () {
+
+                    })
+
+
+                    function getMarkersFromLS() {
+                        var markersAdded = [];
+                        markersAdded = JSON.parse(db.getItem("markers"));
+                        if (markersAdded.length < 1) {
+                            //alert("Brak punktów do wczytania!");
+                            return;
+                        }
+                        for (i = 0; i < markersAdded.length; i++) {
+                            var lat = markersAdded[i].latLng.k;
+                            var lng = markersAdded[i].latLng.B;
+                            addMapMarker(new google.maps.LatLng(lat, lng), markersAdded[i].zoom);
+                        }
+                        lineColor = db.getItem("color");
+                        //alert("Pobrano punkty!");
+                    }
+
+                    function setMarkersToLS() {
+                        if (markersSendable.length < 1) {
+                            alert("Brak punktów do zapisania!");
+                            return;
+                        }
+                        db.setItem("markers", JSON.stringify(markersSendable));
+                        db.setItem("color", lineColor);
+                        alert("Zapisano punkty!")
+                    }
+
+                    function addMapMarker(latLng, zoom) {
+                        var map = $("#gmap").gmap3({ get: "map" });
+                        var marker = new google.maps.Marker({
+                            position: latLng,
+                            map: map,
+                            options: {
+                                zoom: zoom
+                            }
+                        });
+
+                        $("#gmap").gmap3({
+                            streetviewpanorama: {
+                                options: {
+                                    container: $("#gmapStreet"),
+                                    opts: {
+                                        position: latLng,
+                                        pov: {
+                                            heading: 4,
+                                            pitch: 5,
+                                            zoom: 1
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        console.log(latLng.lat() + " " + latLng.lng() + " " + zoom);
+                        markers.push([marker, zoom]);
+                        markersSendable.push({ latLng: latLng, zoom: zoom });
+                        $("#markerlist").append("<li><a data-icon=\"forward\" data-iconpos=\"left\" >Miejsce " + listIndex + "</a><a class=\"delete-marker\" data-icon=\"delete\"></a></li>");
+                        $("#markerlist").listview("refresh");
+                        listIndex++;
+                    }
+
+                    function generateColorPicker() {
+                        var cp = document.getElementById("cpContent");
+                        cp.style.width = "240px";
+                        cp.style.height = "240px";
+                        cp.style.position = "absolute";
+                        cp.style.bottom = "0";
+                        cp.style.top = "30px";
+                        cp.style.left = "20px";
+                        for (i = 0; i < 3; i++) {
+                            for (j = 0; j < 3; j++) {
+                                var color = document.createElement("div");
+                                color.style.display = "block";
+                                color.style.borderRadius = "50%";
+                                color.style.width = "70px";
+                                color.style.height = "70px";
+                                color.style.position = "absolute";
+                                color.style.top = 10 + (i * 70) + "px";
+                                color.style.left = 10 + (j * 70) + "px";
+                                color.style.backgroundColor = colorsTable[(3 * i) + j];
+                                color.id = "color_" + ((3 * i) + j);
+                                cp.appendChild(color);
+                            }
+                        }
+                    }
+
+                    generateColorPicker();
+
+                    $("#btnColorSel").click(function () {
+                        $("#colorPicker").popup("open");
+                    });
+
+                    $("#cpContent").on("click", "div", function () {
+                        var selectedColor = $(this).attr("id");
+                        //console.log(selectedColor);
+                        lineColor = colorsTable[parseInt(selectedColor.substring(6))]
+                        if (markers.length > 1 && isPathPresent) redrawPolyline(lineColor);
+                        $("#colorPicker").popup("close");
+                    });
+
+                    $("#btnCloseApp").click(function () {
+                        navigator.notification.confirm("Czy na pewno chcesz wyjść?", exitApp, "Wyjście", "Nie,Tak");
+                    });
+
+                    function exitApp(index) {
+                        if (index == 2) navigator.app.exitApp();
+                    }
+
+                    $(window).on("orientationchange", function () {
+                        mapReInit();
+                    });
+
+                    $("#btnClearLocal").on("click", function () {
+                        db.removeItem("markers");
+                        alert("Zapisane punkty zostały wyczyszczone");
+                    });
+
+                    function onGPSSuccess(position) {
+                        var map = $("#gmap").gmap3({ get: "map" });
+                        var marker = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+
+                        addMapMarker(marker, map.getZoom());
+                        map.setCenter(marker);
+                    }
+
+                    function onGPSError(err) {
+                        alert("Błąd podczas pobierania pozycji: " + err.code)
+                    }
+
+                    var geoOptions = {
+                        maximumAge: 5000,
+                        timeout: 5000,
+                        enableHighAccuracy: true
+                    }
+
+                    $("#btnGetPosition").click(function () {
+                        navigator.geolocation.getCurrentPosition(onGPSSuccess, onGPSError, geoOptions);
+                    });
+
+                    $("#chkStreet").change(function () {
+                        mapReInit();
+                    })
+                });
+
+            </script>
+        </div>
+        <div data-role="footer" data-position="fixed">
+            <!--<a data-role="button" data-icon="back" data-iconpos="right" id="btnCloseApp">Koniec</a>-->
+            <h1 id="infoText"> </h1>
+            
+        </div>
+    </div>
+    <script type="text/javascript" src="cordova.js"></script>
+</body>
+</html>

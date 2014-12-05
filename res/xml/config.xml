@@ -36,6 +36,8 @@
     <content src="index.html" />
 
     <preference name="loglevel" value="DEBUG" />
+	<preference name="load-url-timeout" value="60000" />
+	
     <!--
       <preference name="splashscreen" value="resourceName" />
       <preference name="backgroundColor" value="0xFFF" />
