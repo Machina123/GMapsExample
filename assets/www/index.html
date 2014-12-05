@@ -353,7 +353,11 @@
                         lineColor = colorsTable[parseInt(selectedColor.substring(6))]
                         if (markers.length > 1 && isPathPresent) redrawPolyline(lineColor);
                         $("#colorPicker").popup("close");
-                    })
+                    });
+
+                    $("#btnCloseApp").click(function () {
+                        navigator.notification.confirm("Czy na pewno chcesz wyjść?", function (index) { if (index == 2) navigator.app.exitApp(); }, "Nie,Tak");
+                    });
                 });
 
             </script>
