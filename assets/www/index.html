@@ -14,9 +14,10 @@
         .nomargin {
             margin: 0;
             padding: 0;
+            overflow: hidden !important;
         }
 
-        body {
+        body, #gmap {
             overflow: hidden;
         }
     </style>
@@ -54,7 +55,7 @@
             <img id="btnColorSel" src="img/paint.png" style="display: inline; position: absolute; top: 4px; right: 4px; width: 32px; height: 32px;" alt="Wybierz kolor" />
         </div>
         <div data-role="content" class="nomargin">
-            <div id="gmap"></div>
+            <div id="gmap" ></div>
             <script>
                 var listIndex = 0;
                 var db = localStorage;
@@ -92,7 +93,7 @@
                     setTimeout(function () { mapInit() }, 1250);
                     function mapInit() {
                         
-                        $("#gmap").width("100%").height((window.innerHeight - 75)+ "px");
+                        $("#gmap").css("position","absolute").width("100%").height(window.innerHeight - 84 + "px");
                         $("#gmap").gmap3({
                             map: {
                                 options: {
@@ -357,7 +358,7 @@
 
             </script>
         </div>
-        <div data-role="footer" data-position="fixed">
+        <div data-role="footer" data-position="fixed" class="ui-bar">
             <a data-role="button" data-icon="back" data-iconpos="right" id="btnCloseApp">Koniec</a>
         </div>
     </div>
