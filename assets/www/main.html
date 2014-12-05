@@ -264,7 +264,7 @@
                             data: JSON.stringify(dataString),
                             action: "save"
                         };
-                        alert(JSON.stringify(dataString));
+                        //alert(JSON.stringify(dataString));
                         $.ajax({
                             type: "POST",
                             url: "http://3ib2.spec.pl.hostingasp.pl/Ciepiela_Patryk/TRIPS_DATA/Handler.aspx",
@@ -272,7 +272,7 @@
                             dataType: "text",
                             success: function (response) {
                                 $.mobile.hidePageLoadingMsg();
-                                //alert(response);
+                                alert(response);
                             },
                             error: function (xhr) {
                                 $.mobile.hidePageLoadingMsg();
@@ -411,7 +411,8 @@
                         var marker = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
 
                         addMapMarker(marker, map.getZoom());
-                        map.setCenter(marker);
+                        map.panTo(marker);
+                        map.setZoom(14);
                     }
 
                     function onGPSError(err) {
@@ -467,7 +468,7 @@
                         var index = $(this).index();
                         var trip = JSON.parse(allTrips[index][3]);
                         var color = allTrips[index][1];
-
+                        $.mobile.showPageLoadingMsg();
                         clearMap();
 
                         for (i = 0; i < trip.length; i++) {
@@ -479,7 +480,7 @@
                         $("#gmap").gmap3({
                             autofit: {}
                         })
-
+                        $.mobile.hidePageLoadingMsg();
                         $("#infoText").html("Trasa: " + allTrips[index][0] + " - " + allTrips[index][2]);
                     })
                 });
