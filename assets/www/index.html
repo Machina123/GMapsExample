@@ -12,6 +12,12 @@
     <title>Hello World</title>
 </head>
 <body>
+    <div data-role="page" id="splash">
+        <div data-role="content" id="splashContent">
+
+        </div>
+    </div>
+
     <div data-role="page" id="main">
         <div id="optionsPanel" data-role="panel" data-position="left" data-slide-close="true" data-display="push">
             <label>Szerokość geograficzna:<input id="Rlat" type="range" min="-90" max="90" value="0" /></label>
@@ -48,26 +54,56 @@
                 var lineColor = "#ff0000";
                 var colorsTable = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#00ffff", "#ff00aa", "#6666ff", "#ff66ff", "#006666"]
                 var isPathPresent = false;
-                $(document).ready(function () {
 
-                    $("#gmap").width("100%").height(window.innerHeight - 100 + "px");
-                    $("#gmap").gmap3({
-                        map: {
-                            options: {
-                                latLng: [0.000, 0.000],
-                                zoom: 3,
-                                disableDefaultUI: true,
-                                disableDoubleClickZoom: true
-                            },
-                            events: {
-                                click: function (map, event) {
-                                    //console.log(event);
-                                    var map = $("#gmap").gmap3({ get: "map" });
-                                    addMapMarker(event.latLng, map.getZoom());
+                $(document).on("pageinit", "#splash", function () {
+                    var page = document.getElementById("splashContent");
+                    var logo = document.createElement("img");
+                    logo.src = "img/icon.png";
+                    logo.style.position = "fixed";
+                    logo.style.left = ((Math.floor(window.innerWidth) / 2) - 96) + "px";
+                    logo.style.top = ((Math.floor(window.innerHeight) / 2) - 96) + "px";
+                    var text = document.createElement("span");
+                    text.innerHTML = "MachiTrips";
+                    text.style.display = "block";
+                    text.style.width = window.innerWidth;
+                    text.style.textAlign = "center";
+                    text.style.color = "#6699ff";
+                    text.style.fontFamily = "Arial";
+                    text.style.fontSize = "30pt";
+                    page.appendChild(text);
+                    page.appendChild(logo);
+                    console.log("Splash screen");
+                    setTimeout(function () {
+                        $.mobile.navigate("#main");
+                    }, 3000);
+                });
+
+                $(document).on("pageinit", "#main", function () {
+                    console.log("Ładowanie mapy");
+                    setTimeout(function () { mapInit() }, 4750);
+                    function mapInit() {
+                        $.mobile.showPageLoadingMsg();
+                        $("#gmap").width("100%").height(window.innerHeight - 100 + "px");
+                        $("#gmap").gmap3({
+                            map: {
+                                options: {
+                                    latLng: [0.000, 0.000],
+                                    zoom: 3,
+                                    disableDefaultUI: true,
+                                    disableDoubleClickZoom: true
+                                },
+                                events: {
+                                    click: function (map, event) {
+                                        //console.log(event);
+                                        var map = $("#gmap").gmap3({ get: "map" });
+                                        addMapMarker(event.latLng, map.getZoom());
+                                    }
                                 }
                             }
-                        }
-                    });
+                        });
+
+                        $.mobile.hidePageLoadingMsg();
+                    }
 
                     $("#Rlon").change(function () {
                         //alert("zmiana")
@@ -119,7 +155,7 @@
 
 
                     $("#btnDrawPath").click(function () {
-                       
+
                         redrawPolyline(lineColor);
 
                     });
@@ -173,7 +209,7 @@
                             polyline: {
                                 map: null
                             }
-                             
+
                         });
                         isPathPresent = false;
                         $("#markerlist").html("");
@@ -186,18 +222,24 @@
                     $("#btnSendToServer").click(function () {
 
                         $.mobile.showPageLoadingMsg();
-
+                        var pointsTab = [];
+                        for (i = 0; i < markersSendable.length; i++) {
+                            pointsTab[i] = [markersSendable[i].latLng.lat(), markersSendable[i].latLng.lng(), markersSendable[i].zoom];
+                        }
+                        var dataString = [prompt("Podaj swoje imię"), lineColor, new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(), JSON.stringify(pointsTab)]
                         var sendObj = {
-                            color: lineColor,
-                            name: prompt("Podaj swoje imię"),
-                            date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(),
-                            path: JSON.stringify(markersSendable),
+                            /*  color: lineColor,
+                                name: prompt("Podaj swoje imię"),
+                                date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(),
+                                path: JSON.stringify(markersSendable),
+                            */
+                            data: JSON.stringify(dataString),
                             action: "save"
                         };
-
+                        alert(JSON.stringify(dataString));
                         $.ajax({
                             type: "POST",
-                            url: "http://machinacloud.somee.com/gmaps/Handler.aspx",
+                            url: "http://localhost:51311/Handler.aspx",
                             data: sendObj,
                             dataType: "text",
                             success: function (response) {
@@ -297,7 +339,7 @@
                         var selectedColor = $(this).attr("id");
                         //console.log(selectedColor);
                         lineColor = colorsTable[parseInt(selectedColor.substring(6))]
-                        if(markers.length > 1 && isPathPresent) redrawPolyline(lineColor);
+                        if (markers.length > 1 && isPathPresent) redrawPolyline(lineColor);
                         $("#colorPicker").popup("close");
                     })
                 });
