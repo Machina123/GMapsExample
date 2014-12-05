@@ -13,6 +13,7 @@ public partial class Handler : System.Web.UI.Page
 
     protected void Page_Load(object sender, EventArgs e)
     {
+        Response.AppendHeader("Access-Control-Allow-Origin", "*"); 
         string action = Request["action"];
         
         switch (action)
@@ -27,7 +28,6 @@ public partial class Handler : System.Web.UI.Page
                 
                 try 
 	            {	        
-		            Response.Write(PATH);
                     Response.Write("Nieprawidłowa akcja");
 	            }
 	            catch (Exception ex)

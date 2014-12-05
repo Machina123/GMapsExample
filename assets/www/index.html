@@ -10,6 +10,16 @@
     <script src="http://maps.google.com/maps/api/js?sensor=false&language=pl"></script>
     <script src="lib/gmap3.min.js"></script>
     <title>Hello World</title>
+    <style>
+        .nomargin {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            overflow: hidden;
+        }
+    </style>
 </head>
 <body>
     <div data-role="page" id="splash">
@@ -27,12 +37,11 @@
             <a data-role="button" data-icon="star" data-iconpos="left" id="btnDrawPath">Narysuj wycieczkę</a>
             <a data-role="button" data-icon="delete" data-iconpos="left" id="btnClearMap">Wyczyść mapę</a>
             <a data-role="button" data-icon="check" data-iconpos="left" id="btnSaveMarkers">Zapisz punkty</a>
-            <a data-role="button" data-icon="refresh" data-iconpos="left" id="btnLoadMarkers">Wczytaj punkty</a>
             <a data-role="button" data-icon="edit" data-iconpos="left" id="btnSendToServer">Wyślij trasę na serwer</a>
             <!--<a data-role="button" data-icon="check" data-iconpos="left" id="btnSavePlaces">Zapisz miejsca</a>-->
         </div>
 
-        <div data-role="popup" id="colorPicker" data-overlay-theme="a" data-theme="b" style="width: 400px; height: 400px;" class="ui-corner-all">
+        <div data-role="popup" id="colorPicker" data-overlay-theme="a" data-theme="b" style="width: 360px; height: 360px;" class="ui-corner-all">
             <div data-role="header" class="ui-corner-top">
                 <h1>Wybierz kolor</h1>
             </div>
@@ -44,7 +53,7 @@
             <img id="menuButton" style="display: inline; position: absolute; top: 4px; left: 4px; width: 32px; height: 32px;" src="img\menu.png" alt="Menu" />
             <img id="btnColorSel" src="img/paint.png" style="display: inline; position: absolute; top: 4px; right: 4px; width: 32px; height: 32px;" alt="Wybierz kolor" />
         </div>
-        <div data-role="content">
+        <div data-role="content" class="nomargin">
             <div id="gmap"></div>
             <script>
                 var listIndex = 0;
@@ -68,7 +77,6 @@
                     text.style.width = window.innerWidth;
                     text.style.textAlign = "center";
                     text.style.color = "#6699ff";
-                    text.style.fontFamily = "Arial";
                     text.style.fontSize = "30pt";
                     page.appendChild(text);
                     page.appendChild(logo);
@@ -80,10 +88,11 @@
 
                 $(document).on("pageinit", "#main", function () {
                     console.log("Ładowanie mapy");
-                    setTimeout(function () { mapInit() }, 4750);
+                    $.mobile.showPageLoadingMsg();
+                    setTimeout(function () { mapInit() }, 1250);
                     function mapInit() {
-                        $.mobile.showPageLoadingMsg();
-                        $("#gmap").width("100%").height(window.innerHeight - 100 + "px");
+                        
+                        $("#gmap").width("100%").height((window.innerHeight - 75)+ "px");
                         $("#gmap").gmap3({
                             map: {
                                 options: {
@@ -103,6 +112,8 @@
                         });
 
                         $.mobile.hidePageLoadingMsg();
+
+                        getMarkersFromLS();
                     }
 
                     $("#Rlon").change(function () {
@@ -258,7 +269,7 @@
                     });
 
                     $("#btnLoadMarkers").click(function () {
-                        getMarkersFromLS();
+                        
                     })
 
 
@@ -307,21 +318,21 @@
 
                     function generateColorPicker() {
                         var cp = document.getElementById("cpContent");
-                        cp.style.width = "330px";
-                        cp.style.height = "330px";
+                        cp.style.width = "300px";
+                        cp.style.height = "300px";
                         cp.style.position = "absolute";
                         cp.style.bottom = "0";
-                        cp.style.left = "35px";
+                        cp.style.left = "30px";
                         for (i = 0; i < 3; i++) {
                             for (j = 0; j < 3; j++) {
                                 var color = document.createElement("div");
                                 color.style.display = "block";
                                 color.style.borderRadius = "50%";
-                                color.style.width = "110px";
-                                color.style.height = "110px";
+                                color.style.width = "95px";
+                                color.style.height = "95px";
                                 color.style.position = "absolute";
-                                color.style.top = (i * 110) + "px";
-                                color.style.left = (j * 110) + "px";
+                                color.style.top = 15 + (i * 100) + "px";
+                                color.style.left = (j * 105) + "px";
                                 color.style.backgroundColor = colorsTable[(3 * i) + j];
                                 color.id = "color_" + ((3 * i) + j);
                                 cp.appendChild(color);
@@ -347,6 +358,7 @@
             </script>
         </div>
         <div data-role="footer" data-position="fixed">
+            <a data-role="button" data-icon="back" data-iconpos="right" id="btnCloseApp">Koniec</a>
         </div>
     </div>
 
