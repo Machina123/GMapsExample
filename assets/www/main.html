@@ -189,9 +189,10 @@
 
                     $("#btnClearMap").click(function () {
                         clearMap();
+                        $("#infoText").html("Nowa wycieczka? Czemu nie!")
                         alert("Mapa została wyczyszczona");
                     });
-                    
+
                     function clearMap() {
                         var map = $("#gmap").gmap3({ get: "map" });
                         for (i = 0; i < markers.length; i++) {
@@ -260,11 +261,6 @@
                         }
                         var dataString = [prompt("Podaj swoje imię"), lineColor, new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(), JSON.stringify(pointsTab)]
                         var sendObj = {
-                            /*  color: lineColor,
-                                name: prompt("Podaj swoje imię"),
-                                date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(),
-                                path: JSON.stringify(markersSendable),
-                            */
                             data: JSON.stringify(dataString),
                             action: "save"
                         };
@@ -276,7 +272,7 @@
                             dataType: "text",
                             success: function (response) {
                                 $.mobile.hidePageLoadingMsg();
-                                alert(response);
+                                //alert(response);
                             },
                             error: function (xhr) {
                                 $.mobile.hidePageLoadingMsg();
@@ -453,7 +449,7 @@
                                 //alert(response);
                                 allTrips = JSON.parse(response);
                                 $("#tripslist").html("");
-                                for(i=0; i<allTrips.length; i++) {
+                                for (i = 0; i < allTrips.length; i++) {
                                     $("#tripslist").append("<li><a>" + allTrips[i][0] + " - " + allTrips[i][2] + "</a></li>");
                                 }
                                 $("#tripslist").listview("refresh");
@@ -469,7 +465,6 @@
 
                     $("#tripslist").on("click", "li", function () {
                         var index = $(this).index();
-                        var map = $("#gmap").gmap3({ get: "map" });
                         var trip = JSON.parse(allTrips[index][3]);
                         var color = allTrips[index][1];
 
@@ -481,6 +476,10 @@
 
                         lineColor = color;
                         redrawPolyline(color);
+                        $("#gmap").gmap3({
+                            autofit: {}
+                        })
+
                         $("#infoText").html("Trasa: " + allTrips[index][0] + " - " + allTrips[index][2]);
                     })
                 });

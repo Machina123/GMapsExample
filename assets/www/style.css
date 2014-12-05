@@ -24,10 +24,6 @@
     overflow: hidden !important;
 }
 
-body, #gmap {
-    overflow: hidden;
-}
-
 
 .animated {
     width: 700px;
