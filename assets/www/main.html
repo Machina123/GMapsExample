@@ -34,6 +34,11 @@
             <!--<a data-role="button" data-icon="check" data-iconpos="left" id="btnSavePlaces">Zapisz miejsca</a>-->
         </div>
 
+        <div id="tripsPanel" data-role="panel" data-position="left" data-slide-close="true" data-display="push">
+            <a data-role="button" data-mini="true" data-icon="refresh" data-iconpos="left" id="btnGetTrips">Pobierz trasy z serwera</a><br />
+            <ul id="tripslist" data-role="listview"></ul>
+        </div>
+
         <div data-role="popup" id="colorPicker" data-overlay-theme="a" data-theme="b" style="width: 270px; height: 270px;" class="ui-corner-all">
             <div data-role="header" class="ui-corner-top">
                 <h2>Wybierz kolor</h2>
@@ -60,6 +65,8 @@
                 var lineColor = "#ff0000";
                 var colorsTable = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#00ffff", "#ff00aa", "#6666ff", "#ff66ff", "#006666"]
                 var isPathPresent = false;
+                var allTrips = [];
+
 
                 $(document).on("pageinit", "#splash", function () {
                     var page = document.getElementById("splashContent");
@@ -181,6 +188,11 @@
                     });
 
                     $("#btnClearMap").click(function () {
+                        clearMap();
+                        alert("Mapa została wyczyszczona");
+                    });
+                    
+                    function clearMap() {
                         var map = $("#gmap").gmap3({ get: "map" });
                         for (i = 0; i < markers.length; i++) {
                             markers[i][0].setMap(null);
@@ -189,11 +201,10 @@
                         markers.splice(0, markers.length);
                         markersSendable.splice(0, markersSendable.length);
                         listIndex = 0;
-                        
+
                         $("#markerlist").html("");
                         $("#markerlist").listview("refresh");
-                        alert("Mapa została wyczyszczona");
-                    });
+                    }
 
                     function redrawPolyline(colorS) {
                         $("#gmap").gmap3("clear");
@@ -260,7 +271,7 @@
                         alert(JSON.stringify(dataString));
                         $.ajax({
                             type: "POST",
-                            url: "http://localhost:51311/Handler.aspx",
+                            url: "http://3ib2.spec.pl.hostingasp.pl/Ciepiela_Patryk/TRIPS_DATA/Handler.aspx",
                             data: sendObj,
                             dataType: "text",
                             success: function (response) {
@@ -338,7 +349,7 @@
                         console.log(latLng.lat() + " " + latLng.lng() + " " + zoom);
                         markers.push([marker, zoom]);
                         markersSendable.push({ latLng: latLng, zoom: zoom });
-                        $("#markerlist").append("<li><a data-icon=\"forward\" data-iconpos=\"left\" >Miejsce " + listIndex + "</a><a class=\"delete-marker\" data-icon=\"delete\"></a></li>");
+                        $("#markerlist").append("<li><a>Miejsce " + listIndex + "</a><a class=\"delete-marker\" data-icon=\"delete\"></a></li>");
                         $("#markerlist").listview("refresh");
                         listIndex++;
                     }
@@ -423,6 +434,54 @@
 
                     $("#chkStreet").change(function () {
                         mapReInit();
+                    });
+
+                    $("#btnGetRemoteTrips").click(function () {
+                        $("#tripsPanel").panel("open");
+                    });
+
+                    $("#btnGetTrips").click(function () {
+                        $.mobile.showPageLoadingMsg();
+                        $.ajax({
+                            type: "POST",
+                            url: "http://3ib2.spec.pl.hostingasp.pl/Ciepiela_Patryk/TRIPS_DATA/Handler.aspx",
+                            data: {
+                                action: "load"
+                            },
+                            dataType: "text",
+                            success: function (response) {
+                                //alert(response);
+                                allTrips = JSON.parse(response);
+                                $("#tripslist").html("");
+                                for(i=0; i<allTrips.length; i++) {
+                                    $("#tripslist").append("<li><a>" + allTrips[i][0] + " - " + allTrips[i][2] + "</a></li>");
+                                }
+                                $("#tripslist").listview("refresh");
+                                $.mobile.hidePageLoadingMsg();
+                                alert("Pobrano " + allTrips.length + " trasy z serwera");
+                            },
+                            error: function (xhr) {
+                                $.mobile.hidePageLoadingMsg();
+                                alert("Niepowodzenie: " + xhr.responseText);
+                            }
+                        });
+                    });
+
+                    $("#tripslist").on("click", "li", function () {
+                        var index = $(this).index();
+                        var map = $("#gmap").gmap3({ get: "map" });
+                        var trip = JSON.parse(allTrips[index][3]);
+                        var color = allTrips[index][1];
+
+                        clearMap();
+
+                        for (i = 0; i < trip.length; i++) {
+                            addMapMarker(new google.maps.LatLng(trip[i][0], trip[i][1]), trip[i][2]);
+                        }
+
+                        lineColor = color;
+                        redrawPolyline(color);
+                        $("#infoText").html("Trasa: " + allTrips[index][0] + " - " + allTrips[index][2]);
                     })
                 });
 
@@ -431,7 +490,7 @@
         <div data-role="footer" data-position="fixed">
             <!--<a data-role="button" data-icon="back" data-iconpos="right" id="btnCloseApp">Koniec</a>-->
             <h1 id="infoText"> </h1>
-            
+
         </div>
     </div>
     <script type="text/javascript" src="cordova.js"></script>

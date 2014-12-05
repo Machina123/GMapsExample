@@ -55,6 +55,19 @@ public partial class Handler : System.Web.UI.Page
 
     private void LoadFile()
     {
-
+        try
+        {
+            StreamReader sr = new StreamReader(PATH);
+            string stream = sr.ReadToEnd();
+            //StringBuilder sb = new StringBuilder();
+            //sb.Append("[").Append(stream.Substring(0, stream.Length - 3)).Append("]");
+            string sentData = "[" + stream.Substring(0, stream.Length - 3) + "]";
+            sr.Close();
+            Response.Write(sentData);
+        }
+        catch (Exception ex)
+        {
+            Response.Write("Błąd: " + ex.Message.ToString());
+        }
     }
 }
